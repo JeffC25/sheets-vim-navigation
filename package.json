@@ -18,6 +18,7 @@
     "postinstall": "wxt prepare"
   },
   "devDependencies": {
+    "prettier": "^3.9.0",
     "typescript": "^5.9.3",
     "wxt": "^0.20.27"
   }
