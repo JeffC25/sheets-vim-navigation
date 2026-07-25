@@ -1,10 +1,16 @@
 import type { Config } from './config';
 import type { ActionType } from './types';
 
+/** One parsed binding: a sequence of key tokens that triggers an action (e.g. ['g', 'g']). */
+export interface Binding {
+    action: ActionType;
+    tokens: string[];
+}
+
 /**
- * Canonical string for a keypress, including a modifier prefix so bindings can distinguish e.g.
- * `r` from `Ctrl-r`. Bare keys only match when no Ctrl/Meta is held, so Sheets/browser shortcuts
- * (Cmd+A, Cmd+C, …) fall through instead of colliding with single-letter motions.
+ * Canonical string for a single keypress, including a modifier prefix so bindings can distinguish
+ * e.g. `r` from `Ctrl-r`. Bare keys only get a prefix-free token when no Ctrl/Meta is held, so
+ * Sheets/browser shortcuts (Cmd+A, Cmd+C, …) don't collide with single-letter motions.
  */
 export function eventToken(event: KeyboardEvent): string {
     if (event.ctrlKey) return `Ctrl-${event.key}`;
@@ -12,10 +18,19 @@ export function eventToken(event: KeyboardEvent): string {
     return event.key;
 }
 
-export function resolveActionType(event: KeyboardEvent, config: Config): ActionType | null {
-    const token = eventToken(event);
-    for (const [actionType, keys] of Object.entries(config.keymap)) {
-        if (keys.includes(token)) return actionType as ActionType;
+/** A binding string is a whitespace-separated sequence of tokens: `g g`, `Escape`, `Ctrl-r`. */
+export function parseBinding(binding: string): string[] {
+    return binding.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Flattens the keymap into a list of bindings (one per alternative key sequence). */
+export function buildBindings(keymap: Config['keymap']): Binding[] {
+    const bindings: Binding[] = [];
+    for (const [action, alternatives] of Object.entries(keymap)) {
+        for (const alt of alternatives ?? []) {
+            const tokens = parseBinding(alt);
+            if (tokens.length) bindings.push({ action: action as ActionType, tokens });
+        }
     }
-    return null;
+    return bindings;
 }

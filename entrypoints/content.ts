@@ -1,30 +1,64 @@
 import { executeAction } from '@/lib/actions';
-import { DEFAULT_CONFIG } from '@/lib/config';
-import { resolveActionType } from '@/lib/keymap';
+import { CONFIG_ATTR, type MainConfig } from '@/lib/bridge';
+import { buildBindings, eventToken, type Binding } from '@/lib/keymap';
 import { simulateKey } from '@/lib/navigation';
 import { createOverlay } from '@/lib/overlay';
-import { PrefixTracker } from '@/lib/prefix';
+import { SequenceMatcher } from '@/lib/sequence';
 import { VimStateManager } from '@/lib/state';
 
 export default defineContentScript({
-    matches: DEFAULT_CONFIG.urlPatterns,
+    // Broad match; the isolated bridge decides whether we're actually active on this URL.
+    matches: ['*://*/*'],
     // Run in the page's MAIN world so synthesized key events keep their overridden keyCode/which
     // properties, which Sheets' grid handler requires (see lib/navigation.ts).
     world: 'MAIN',
     main() {
-        if (!DEFAULT_CONFIG.enabled) return;
-
         const state = new VimStateManager();
-        const overlay = createOverlay(DEFAULT_CONFIG.overlayPosition);
-        const prefixTracker = new PrefixTracker();
+        const overlay = createOverlay();
+        const matcher = new SequenceMatcher();
 
-        overlay.mount();
-        overlay.update(state.mode, state.pendingCount);
         state.onChange((s) => overlay.update(s.mode, s.pendingCount));
+
+        // Config is published by the isolated bridge onto a shared <html> attribute.
+        let active = false;
+        let bindings: Binding[] = [];
+
+        const readConfig = (): MainConfig | null => {
+            const raw = document.documentElement.getAttribute(CONFIG_ATTR);
+            if (!raw) return null;
+            try {
+                return JSON.parse(raw) as MainConfig;
+            } catch {
+                return null;
+            }
+        };
+
+        const applyConfig = (config: MainConfig | null) => {
+            active = config?.active ?? false;
+            bindings = buildBindings(config?.keymap ?? {});
+            matcher.reset();
+            overlay.setPosition(config?.overlayPosition ?? 'bottomLeft');
+            overlay.setVisible(active);
+            if (active) {
+                overlay.update(state.mode, state.pendingCount);
+            } else {
+                state.setMode('normal');
+                state.clearCount();
+            }
+        };
+
+        applyConfig(readConfig());
+        // React to live config changes (bridge rewrites the attribute on storage updates).
+        new MutationObserver(() => applyConfig(readConfig())).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: [CONFIG_ATTR],
+        });
 
         document.addEventListener(
             'keydown',
             (event) => {
+                if (!active) return;
+
                 if (state.mode === 'insert') {
                     if (event.key === 'Escape') {
                         // Sheets' native Escape cancels the edit, discarding changes. Instead,
@@ -57,41 +91,39 @@ export default defineContentScript({
                 if (isDigit && (event.key !== '0' || state.hasPendingCount())) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
+                    matcher.reset(); // a count digit abandons any half-typed sequence
                     state.pushCountDigit(event.key);
                     return;
                 }
 
-                const actionType = resolveActionType(event, DEFAULT_CONFIG);
-                if (!actionType) {
-                    // Any non-motion key cancels a pending count.
-                    state.clearCount();
-                    // In normal mode, swallow bare printable keys so they don't start editing the
-                    // cell. Let modifier combos through so Sheets/browser shortcuts still work.
-                    const isTypingKey =
-                        event.key.length === 1 &&
-                        !event.ctrlKey &&
-                        !event.metaKey &&
-                        !event.altKey;
-                    if (isTypingKey) {
-                        event.preventDefault();
-                        event.stopImmediatePropagation();
-                    }
-                    return;
-                }
+                const match = matcher.push(eventToken(event), bindings);
 
-                if (actionType === 'moveToStart') {
+                if (match.status === 'pending') {
+                    // Mid-sequence (e.g. first `g` of `gg`): swallow so it doesn't reach the cell.
                     event.preventDefault();
                     event.stopImmediatePropagation();
-                    state.clearCount(); // gg ignores counts
-                    if (prefixTracker.consume(event.key)) {
-                        executeAction('moveToStart', state);
-                    }
                     return;
                 }
 
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                executeAction(actionType, state, state.consumeCount());
+                if (match.status === 'fired') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    executeAction(match.action, state, state.consumeCount());
+                    return;
+                }
+
+                // No binding matched. Cancel any pending count, and swallow bare printable keys so
+                // they don't start editing the cell. Modifier combos pass through to Sheets/browser.
+                state.clearCount();
+                const isTypingKey =
+                    event.key.length === 1 &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.altKey;
+                if (isTypingKey) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
             },
             true,
         );

@@ -8,13 +8,13 @@ export interface Config {
 }
 
 export const DEFAULT_CONFIG: Config = {
-    urlPatterns: ['*://*.docs.google.com/spreadsheets*'],
+    urlPatterns: ['*://docs.google.com/spreadsheets*'],
     keymap: {
         moveUp: ['k'],
         moveDown: ['j'],
         moveLeft: ['h'],
         moveRight: ['l'],
-        moveToStart: ['g'], // handled by PrefixTracker to support the `gg` sequence
+        moveToStart: ['g g'], // space-separated = a two-key sequence
         moveToEnd: ['G'],
         moveToRowStart: ['0'],
         moveToRowEnd: ['$'],
@@ -31,6 +31,5 @@ export const DEFAULT_CONFIG: Config = {
         redo: ['Ctrl-r'],
     },
     overlayPosition: 'bottomLeft',
-    // TODO: default to false once an options UI exists to toggle this
     enabled: true,
 };

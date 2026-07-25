@@ -9,13 +9,12 @@ const MODE_COLORS: Record<Mode, string> = {
     visual: '#6a1b9a',
 };
 
-export function createOverlay(position: Config['overlayPosition']) {
+export function createOverlay() {
     const el = document.createElement('div');
     el.id = OVERLAY_ID;
     Object.assign(el.style, {
         position: 'fixed',
         bottom: '12px',
-        [position === 'bottomLeft' ? 'left' : 'right']: '12px',
         zIndex: '2147483647',
         padding: '4px 10px',
         borderRadius: '4px',
@@ -24,11 +23,27 @@ export function createOverlay(position: Config['overlayPosition']) {
         fontWeight: 'bold',
         color: '#fff',
         pointerEvents: 'none',
+        display: 'none',
     } satisfies Partial<CSSStyleDeclaration>);
 
+    let mounted = false;
+
     return {
-        mount() {
-            document.body.appendChild(el);
+        setPosition(position: Config['overlayPosition']) {
+            if (position === 'bottomLeft') {
+                el.style.left = '12px';
+                el.style.right = 'auto';
+            } else {
+                el.style.right = '12px';
+                el.style.left = 'auto';
+            }
+        },
+        setVisible(visible: boolean) {
+            if (visible && !mounted && document.body) {
+                document.body.appendChild(el);
+                mounted = true;
+            }
+            el.style.display = visible ? 'block' : 'none';
         },
         update(mode: Mode, pendingCount = 0) {
             const count = pendingCount > 0 ? ` ${pendingCount}` : '';
