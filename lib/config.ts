@@ -3,7 +3,7 @@ import { ActionType } from './types';
 export interface Config {
     urlPatterns: string[];
     keymap: Partial<Record<ActionType, string>>;
-    overlayPosition: 'bottomLeft' | 'bottonRight';
+    overlayPosition: 'bottomLeft' | 'bottomRight';
     enabled: boolean;
 }
 
@@ -14,13 +14,14 @@ export const DEFAULT_CONFIG: Config = {
         moveDown: 'j',
         moveLeft: 'h',
         moveRight: 'l',
-        moveToStart: 'g', // TODO: operator-pending state to support `gg` sequence
+        moveToStart: 'g', // handled by PrefixTracker to support the `gg` sequence
         moveToEnd: 'G',
         enterInsert: 'i',
         enterAppend: 'a',
-        enterVisual: 'v',
+        // TODO: add enterVisual once visual mode is implemented
         enterNormal: 'Escape',
     },
     overlayPosition: 'bottomLeft',
-    enabled: false,
+    // TODO: default to false once an options UI exists to toggle this
+    enabled: true,
 };
