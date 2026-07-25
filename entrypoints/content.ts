@@ -19,8 +19,8 @@ export default defineContentScript({
         const prefixTracker = new PrefixTracker();
 
         overlay.mount();
-        overlay.update(state.mode);
-        state.onChange((s) => overlay.update(s.mode));
+        overlay.update(state.mode, state.pendingCount);
+        state.onChange((s) => overlay.update(s.mode, s.pendingCount));
 
         document.addEventListener(
             'keydown',
@@ -45,8 +45,21 @@ export default defineContentScript({
                     return;
                 }
 
+                // Numeric count prefix (e.g. 5j). '0' is only a count digit while a count is
+                // already building; otherwise it's the moveToRowStart motion.
+                const isDigit =
+                    event.key.length === 1 && event.key >= '0' && event.key <= '9';
+                if (isDigit && (event.key !== '0' || state.hasPendingCount())) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    state.pushCountDigit(event.key);
+                    return;
+                }
+
                 const actionType = resolveActionType(event.key, DEFAULT_CONFIG);
                 if (!actionType) {
+                    // Any non-motion key cancels a pending count.
+                    state.clearCount();
                     // In normal mode, swallow bare printable keys so they don't start editing the
                     // cell. Let modifier combos through so Sheets/browser shortcuts still work.
                     const isTypingKey =
@@ -64,6 +77,7 @@ export default defineContentScript({
                 if (actionType === 'moveToStart') {
                     event.preventDefault();
                     event.stopImmediatePropagation();
+                    state.clearCount(); // gg ignores counts
                     if (prefixTracker.consume(event.key)) {
                         executeAction('moveToStart', state);
                     }
@@ -72,7 +86,7 @@ export default defineContentScript({
 
                 event.preventDefault();
                 event.stopImmediatePropagation();
-                executeAction(actionType, state);
+                executeAction(actionType, state, state.consumeCount());
             },
             true,
         );

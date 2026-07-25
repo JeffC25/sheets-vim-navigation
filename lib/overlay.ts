@@ -30,8 +30,9 @@ export function createOverlay(position: Config['overlayPosition']) {
         mount() {
             document.body.appendChild(el);
         },
-        update(mode: Mode) {
-            el.textContent = mode.toUpperCase();
+        update(mode: Mode, pendingCount = 0) {
+            const count = pendingCount > 0 ? ` ${pendingCount}` : '';
+            el.textContent = mode.toUpperCase() + count;
             el.style.backgroundColor = MODE_COLORS[mode];
         },
     };

@@ -5,19 +5,25 @@ import type { ActionType } from './types';
 // The modifier Sheets uses for jump-to-edge navigation (Cmd on macOS, Ctrl elsewhere).
 const jumpModifier = isMac ? { metaKey: true } : { ctrlKey: true };
 
-export function executeAction(actionType: ActionType, state: VimStateManager) {
+function repeat(count: number, fn: () => void) {
+    for (let i = 0; i < count; i++) fn();
+}
+
+// `count` is the vim-style repeat prefix (e.g. 5j). It applies to the relative motions below;
+// absolute jumps (gg/G/0/$) and mode changes ignore it.
+export function executeAction(actionType: ActionType, state: VimStateManager, count = 1) {
     switch (actionType) {
         case 'moveUp':
-            simulateKey('ArrowUp');
+            repeat(count, () => simulateKey('ArrowUp'));
             break;
         case 'moveDown':
-            simulateKey('ArrowDown');
+            repeat(count, () => simulateKey('ArrowDown'));
             break;
         case 'moveLeft':
-            simulateKey('ArrowLeft');
+            repeat(count, () => simulateKey('ArrowLeft'));
             break;
         case 'moveRight':
-            simulateKey('ArrowRight');
+            repeat(count, () => simulateKey('ArrowRight'));
             break;
         case 'moveToStart': {
             // gg: jump to the absolute first row of the current column.
@@ -43,19 +49,19 @@ export function executeAction(actionType: ActionType, state: VimStateManager) {
         }
         case 'blockUp':
             // Ctrl/Cmd+Up jumps to the previous data-block edge, staying in the same column.
-            simulateKey('ArrowUp', jumpModifier);
+            repeat(count, () => simulateKey('ArrowUp', jumpModifier));
             break;
         case 'blockDown':
             // Ctrl/Cmd+Down jumps to the next data-block edge, staying in the same column.
-            simulateKey('ArrowDown', jumpModifier);
+            repeat(count, () => simulateKey('ArrowDown', jumpModifier));
             break;
         case 'blockLeft':
             // Ctrl/Cmd+Left jumps to the previous data-block edge, staying in the same row.
-            simulateKey('ArrowLeft', jumpModifier);
+            repeat(count, () => simulateKey('ArrowLeft', jumpModifier));
             break;
         case 'blockRight':
             // Ctrl/Cmd+Right jumps to the next data-block edge, staying in the same row.
-            simulateKey('ArrowRight', jumpModifier);
+            repeat(count, () => simulateKey('ArrowRight', jumpModifier));
             break;
         case 'moveToRowStart':
             // Unmodified Home moves to the first column of the current row.
