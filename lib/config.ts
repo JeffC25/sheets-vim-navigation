@@ -17,8 +17,11 @@ export const DEFAULT_CONFIG: Config = {
         moveToStart: 'g', // handled by PrefixTracker to support the `gg` sequence
         moveToEnd: 'G',
         moveToRowStart: '0',
+        moveToRowEnd: '$',
         blockUp: '{',
         blockDown: '}',
+        blockLeft: 'b',
+        blockRight: 'w',
         enterInsert: 'i',
         enterAppend: 'a',
         enterReplace: 'r',

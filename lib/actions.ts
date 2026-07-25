@@ -49,10 +49,33 @@ export function executeAction(actionType: ActionType, state: VimStateManager) {
             // Ctrl/Cmd+Down jumps to the next data-block edge, staying in the same column.
             simulateKey('ArrowDown', jumpModifier);
             break;
+        case 'blockLeft':
+            // Ctrl/Cmd+Left jumps to the previous data-block edge, staying in the same row.
+            simulateKey('ArrowLeft', jumpModifier);
+            break;
+        case 'blockRight':
+            // Ctrl/Cmd+Right jumps to the next data-block edge, staying in the same row.
+            simulateKey('ArrowRight', jumpModifier);
+            break;
         case 'moveToRowStart':
             // Unmodified Home moves to the first column of the current row.
             simulateKey('Home');
             break;
+        case 'moveToRowEnd': {
+            // $: jump to the last used column of the current row. Probe the used range's last
+            // column with Ctrl/Cmd+End, then jump back to the original row via the Name Box.
+            const start = readActiveCell();
+            if (!start) {
+                simulateKey('ArrowRight', jumpModifier); // fallback
+                break;
+            }
+            simulateKey('End', jumpModifier);
+            requestAnimationFrame(() => {
+                const end = readActiveCell();
+                jumpToCell(`${end?.col ?? start.col}${start.row}`);
+            });
+            break;
+        }
         case 'enterInsert':
         case 'enterAppend':
             // F2 opens the cell editor with its existing content, so typing appends.
