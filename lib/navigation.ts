@@ -29,6 +29,8 @@ const KEY_CODES: Record<string, number> = {
     Escape: 27,
     Enter: 13,
     Tab: 9,
+    z: 90,
+    y: 89,
 };
 
 // The hidden element Sheets attaches its grid keyboard handlers to. Keys dispatched elsewhere

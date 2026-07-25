@@ -27,6 +27,8 @@ export const DEFAULT_CONFIG: Config = {
         enterReplace: ['r'],
         // TODO: add enterVisual once visual mode is implemented
         enterNormal: ['Escape'],
+        undo: ['u'],
+        redo: ['Ctrl-r'],
     },
     overlayPosition: 'bottomLeft',
     // TODO: default to false once an options UI exists to toggle this

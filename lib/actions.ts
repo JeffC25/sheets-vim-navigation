@@ -96,5 +96,17 @@ export function executeAction(actionType: ActionType, state: VimStateManager, co
         case 'enterNormal':
             state.setMode('normal');
             break;
+        case 'undo':
+            // Sheets undo: Cmd+Z on macOS, Ctrl+Z elsewhere.
+            repeat(count, () => simulateKey('z', jumpModifier));
+            break;
+        case 'redo':
+            // Sheets redo: Cmd+Shift+Z on macOS, Ctrl+Y elsewhere.
+            repeat(count, () =>
+                isMac
+                    ? simulateKey('z', { metaKey: true, shiftKey: true })
+                    : simulateKey('y', { ctrlKey: true }),
+            );
+            break;
     }
 }

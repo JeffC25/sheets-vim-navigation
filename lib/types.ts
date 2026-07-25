@@ -19,7 +19,9 @@ export type ActionType =
     | 'enterAppend'
     | 'enterReplace'
     | 'enterVisual'
-    | 'enterNormal';
+    | 'enterNormal'
+    | 'undo'
+    | 'redo';
 
 export type Action =
     | { type: 'move'; direction: Direction; count: number }

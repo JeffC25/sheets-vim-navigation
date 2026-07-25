@@ -19,6 +19,10 @@ Normal mode (default):
 | `i` / `a` | edit cell (append)                            |
 | `r`       | replace cell contents                         |
 | `Esc`     | commit edit and return to normal mode         |
+| `u`       | undo                                          |
+| `Ctrl-r`  | redo                                          |
+
+Prefix a motion with a number to repeat it (e.g. `5j`, `3}`).
 
 ## Develop
 

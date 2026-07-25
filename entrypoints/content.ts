@@ -48,7 +48,12 @@ export default defineContentScript({
                 // Numeric count prefix (e.g. 5j). '0' is only a count digit while a count is
                 // already building; otherwise it's the moveToRowStart motion.
                 const isDigit =
-                    event.key.length === 1 && event.key >= '0' && event.key <= '9';
+                    event.key.length === 1 &&
+                    event.key >= '0' &&
+                    event.key <= '9' &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.altKey;
                 if (isDigit && (event.key !== '0' || state.hasPendingCount())) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
@@ -56,7 +61,7 @@ export default defineContentScript({
                     return;
                 }
 
-                const actionType = resolveActionType(event.key, DEFAULT_CONFIG);
+                const actionType = resolveActionType(event, DEFAULT_CONFIG);
                 if (!actionType) {
                     // Any non-motion key cancels a pending count.
                     state.clearCount();
