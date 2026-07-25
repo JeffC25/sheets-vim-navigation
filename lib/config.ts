@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG: Config = {
         moveToEnd: 'G',
         enterInsert: 'i',
         enterAppend: 'a',
+        enterReplace: 'r',
         // TODO: add enterVisual once visual mode is implemented
         enterNormal: 'Escape',
     },

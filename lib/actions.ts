@@ -27,7 +27,13 @@ export function executeAction(actionType: ActionType, state: VimStateManager) {
             break;
         case 'enterInsert':
         case 'enterAppend':
+            // F2 opens the cell editor with its existing content, so typing appends.
             simulateKey('F2');
+            state.setMode('insert');
+            break;
+        case 'enterReplace':
+            // No F2: with the cell merely selected, the next typed character overwrites its
+            // contents (native Sheets behavior), giving vim-style replace.
             state.setMode('insert');
             break;
         case 'enterNormal':

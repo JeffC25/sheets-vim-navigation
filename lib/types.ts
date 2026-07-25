@@ -11,6 +11,7 @@ export type ActionType =
     | 'moveToEnd'
     | 'enterInsert'
     | 'enterAppend'
+    | 'enterReplace'
     | 'enterVisual'
     | 'enterNormal';
 
