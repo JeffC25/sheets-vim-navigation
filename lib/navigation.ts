@@ -2,6 +2,13 @@ interface SimulatedKeyOptions {
     ctrlKey?: boolean;
     metaKey?: boolean;
     shiftKey?: boolean;
+    // Dispatch to this element instead of the grid editor (used to drive the Name Box).
+    target?: EventTarget;
+}
+
+export interface CellRef {
+    col: string;
+    row: number;
 }
 
 // On macOS, Sheets binds jump-to-edge shortcuts to Cmd (meta); elsewhere they use Ctrl.
@@ -34,7 +41,10 @@ const RICH_TEXT_EDITOR_ID = 'waffle-rich-text-editor';
  */
 export function simulateKey(key: string, options: SimulatedKeyOptions = {}) {
     const target =
-        document.getElementById(RICH_TEXT_EDITOR_ID) ?? document.activeElement ?? document.body;
+        options.target ??
+        document.getElementById(RICH_TEXT_EDITOR_ID) ??
+        document.activeElement ??
+        document.body;
     if (!target) return;
 
     const keyCode = KEY_CODES[key];
@@ -59,4 +69,32 @@ export function simulateKey(key: string, options: SimulatedKeyOptions = {}) {
         }
         target.dispatchEvent(event);
     }
+}
+
+// The Name Box input (top-left, above the row headers) always shows the active cell's reference
+// and navigates to whatever reference is entered. It's the only reliable way to jump to an
+// absolute cell while preserving the current column.
+const NAME_BOX_ID = 't-name-box';
+
+function getNameBox(): HTMLInputElement | null {
+    return document.getElementById(NAME_BOX_ID) as HTMLInputElement | null;
+}
+
+/** Reads the active cell (e.g. "C5") from the Name Box, or null if it can't be parsed. */
+export function readActiveCell(): CellRef | null {
+    const match = getNameBox()?.value.match(/^([A-Za-z]+)(\d+)/);
+    if (!match) return null;
+    return { col: match[1].toUpperCase(), row: Number(match[2]) };
+}
+
+/** Navigates to an absolute cell reference (e.g. "C1") via the Name Box. Returns false if the box
+ *  isn't found, so callers can fall back to keyboard navigation. */
+export function jumpToCell(ref: string): boolean {
+    const box = getNameBox();
+    if (!box) return false;
+    box.focus();
+    box.value = ref;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    simulateKey('Enter', { target: box });
+    return true;
 }
