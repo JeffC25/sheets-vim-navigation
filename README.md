@@ -6,14 +6,19 @@ Lightweight Vim-style keyboard navigation for Google Sheets, as a browser extens
 
 Normal mode (default):
 
-| Key   | Action                          |
-| ----- | ------------------------------- |
-| `hjkl` | move left / down / up / right  |
-| `gg`  | jump to first cell (A1)         |
-| `G`   | jump to last cell of used range |
-| `i` / `a` | edit cell (append)          |
-| `r`   | replace cell contents           |
-| `Esc` | return to normal mode           |
+| Key       | Action                                        |
+| --------- | --------------------------------------------- |
+| `h j k l` | move left / down / up / right                 |
+| `w` / `e` | jump to next data-block edge (right)          |
+| `b`       | jump to previous data-block edge (left)       |
+| `}` / `{` | jump to next / previous data-block edge (down / up) |
+| `0`       | first column of the row                       |
+| `$`       | last used column of the row                   |
+| `gg`      | first row of the column                       |
+| `G`       | last used row of the column                   |
+| `i` / `a` | edit cell (append)                            |
+| `r`       | replace cell contents                         |
+| `Esc`     | commit edit and return to normal mode         |
 
 ## Develop
 
