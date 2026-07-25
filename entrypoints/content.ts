@@ -1,6 +1,7 @@
 import { executeAction } from '@/lib/actions';
 import { DEFAULT_CONFIG } from '@/lib/config';
 import { resolveActionType } from '@/lib/keymap';
+import { simulateKey } from '@/lib/navigation';
 import { createOverlay } from '@/lib/overlay';
 import { PrefixTracker } from '@/lib/prefix';
 import { VimStateManager } from '@/lib/state';
@@ -25,9 +26,20 @@ export default defineContentScript({
             'keydown',
             (event) => {
                 if (state.mode === 'insert') {
-                    // Let all keys pass through untouched to Sheets' native cell editor;
-                    // just track when it exits back to a plain cell selection.
-                    if (event.key === 'Escape' || event.key === 'Enter' || event.key === 'Tab') {
+                    if (event.key === 'Escape') {
+                        // Sheets' native Escape cancels the edit, discarding changes. Instead,
+                        // commit like vim: Enter commits (and moves down), then Up returns to the
+                        // original cell.
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        simulateKey('Enter');
+                        simulateKey('ArrowUp');
+                        state.setMode('normal');
+                        return;
+                    }
+                    // Enter/Tab commit natively and move the cursor; just sync our mode. All other
+                    // keys pass through untouched to Sheets' cell editor.
+                    if (event.key === 'Enter' || event.key === 'Tab') {
                         state.setMode('normal');
                     }
                     return;

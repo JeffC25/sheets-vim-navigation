@@ -48,7 +48,10 @@ export function simulateKey(key: string, options: SimulatedKeyOptions = {}) {
         shiftKey: options.shiftKey ?? false,
     };
 
-    for (const type of ['keydown', 'keyup'] as const) {
+    // Sheets needs all three events for some keys to register (notably Enter), so we send the full
+    // keydown/keypress/keyup sequence. The simulated keys are all non-printable (arrows, Home, End,
+    // F2, Enter), so the extra keypress can't double-insert characters into a cell.
+    for (const type of ['keydown', 'keypress', 'keyup'] as const) {
         const event = new KeyboardEvent(type, eventInit);
         if (keyCode !== undefined) {
             Object.defineProperty(event, 'keyCode', { get: () => keyCode });
